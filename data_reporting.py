@@ -7,7 +7,9 @@ isDerivedReportQ = f"""
 SELECT COUNT(*) Count, isDerived FROM words GROUP BY isDerived;
 """
 hasDefReportQ = f"""
-SELECT COUNT(*) Count, id IN (SELECT wordId FROM `definitions`) hasDef 
+SELECT COUNT(*) Count, 
+id IN (SELECT wordId FROM `definitions`) hasDef, 
+id IN (SELECT wordId FROM `relationships`) hasRel 
 FROM words 
 GROUP BY hasDef;
 """
@@ -28,4 +30,4 @@ print(conn.execute(query=hasDefReportQ))
 print('='*50)
 print(conn.execute(query=hasCategReportQ))
 print('='*50)
-print(Counter(undefWords))
+# print(Counter(undefWords))
