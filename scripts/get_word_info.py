@@ -2,30 +2,36 @@ import re
 import time
 import tqdm
 
-from src.utils import convert_language
+from src.utils import convert_language, export_to_json
 from .utils import *
 import json
 
 
 
-def main(word, lang, wait_time=0, save_to_db=True, existing_vocab=[]):
+def collect_info(word, lang, wait_time=0, save_to_db=True, existing_vocab=[], include_dialects=True):
     results = {}
 
     no_spaces_word = re.sub('\s', '_', word)
     if word != no_spaces_word: #If word has space, e.q to saying word is an entity
-        fetched_data = {word: parser.fetch(no_spaces_word, query=word, language=lang)}
+        fetched_data = {word: parser.fetch(no_spaces_word, query=word, language=lang, include_dialects=include_dialects)}
     else:
         if type(word) != str:
-            prepped_word = ' '.join(word) #[0]
+            prepped_word = '_'.join(word) #[0]
         else:
             prepped_word = word
         # print(f"Fetching all potentials for {prepped_word} ({lang})")
-        fetched_data = parser.fetch_all_potential(prepped_word, query=word, language=lang)
+        fetched_data = parser.fetch_all_potential(prepped_word, query=word, language=lang, include_dialects=include_dialects)
+        export_to_json(fetched_data, "fetched_data.json")
+
+
     for k in fetched_data:
         element = fetched_data[k]
-        e = collector.save_word(element, save_to_db=save_to_db)
+        e = collector.save_word(element, save_to_db=save_to_db, save_mentions=True)
         for k in e:
             results[k] = results.get(k, []) + e.get(k, [])
+        export_to_json(e, "e.json")
+        # collector.insert_word_data(**results)
+
     if wait_time > 0:
         time.sleep(wait_time)
 
@@ -49,18 +55,14 @@ def main(word, lang, wait_time=0, save_to_db=True, existing_vocab=[]):
 
         sibling_word_data = parser.deorphanize(**orph)
 
-        e = collector.save_word(sibling_word_data, save_to_db=save_to_db, save_orphan=False, save_mentions=False)
-        # for k in e:
-        #     results[k] = results.get(k, []) + e.get(k, [])
+        deorph_element = collector.save_word(sibling_word_data, save_to_db=save_to_db, save_orphan=False, save_mentions=False)
+        for k in deorph_element:
+            results[k] = results.get(k, []) + deorph_element.get(k, [])
 
         deorph_pbar.update(1)
-        if len(sibling_word_data) > 0:
-            with open("json/resrdeorph.json", 'w', encoding="utf8") as f:
-                json.dump(e, f, indent=2, sort_keys=True, ensure_ascii=False)
 
     results['orph_nodes'] = orph_nodes
-    # if len(collector.batch) > 100:
-    #     collector.flush()
+    # collector.insert_word_data(**results)
     return results
 
 

@@ -8,11 +8,11 @@ from src.utils import get_colormap
 from pyvis.network import Network
 
 
-def export_graph_to_html(output_file='graph.html'):
-    graph = builder.build_graph("d2w", category_info=True, appendix_info=True, 
+def export_graph_to_html(output_file='graph.html', category_info=True, appendix_info=True, select_menu=True, filter_menu=True):
+    graph = builder.build_graph("d2w", category_info=category_info, appendix_info=appendix_info, 
         preprocessing_callback=Preprocessor(return_type="str"),
     )
-    g = Network(directed=True, select_menu=True, filter_menu=True)
+    g = Network(directed=True, select_menu=select_menu, filter_menu=filter_menu)
     n_color_palette = get_colormap(graph.ntypes, palette="tab10_r")
     for n_i, ntype in enumerate(graph.ntypes):
         node_ids = builder.node_ids[ntype]
@@ -27,7 +27,8 @@ def export_graph_to_html(output_file='graph.html'):
             if node is not None:
                 node['i'] = i
                 # print('\t {}'.format(node['word']))
-                g.add_node(n_id=node['id'], label=node['word'], color=n_color_palette[ntype])
+                title = "[{language}]\n{word}\n\n{wikiUrl}".format_map(node)
+                g.add_node(n_id=node['id'], label=node['word'], color=n_color_palette[ntype], title=title)
 
     # graph = dgl.to_homogeneous(builder.graph)
     # print(graph.ndata)

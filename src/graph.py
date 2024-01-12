@@ -72,7 +72,6 @@ class GraphBuilder:
         if query_filter is not None:
             for k, v in query_filter.items():
                 where_clause[k] = v
-
         result = self.conn.read(
             collection_name=self.edge_table,
             fields=fields,
